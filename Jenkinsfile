@@ -27,18 +27,18 @@ pipeline {
         }
 
         stage('Set Up Virtual Environment') {
-            steps {
-                script {
-                    // Create and activate a virtual environment
-                    sh '''
-                    set -e
-                    python3 -m venv venv
-                    source venv/bin/activate
-                    pip install --upgrade pip
-                    '''
-                }
-            }
+    steps {
+        script {
+            sh '''
+            set -e
+            python3.11 -m venv venv
+            source venv/bin/activate
+            pip install --upgrade pip
+            '''
         }
+    }
+}
+
 
         stage('Install Dependencies') {
             steps {
