@@ -3,64 +3,38 @@ pipeline {
 
     environment {
         PROJECT_ID = 'bunny-project-444905'
-        GOOGLE_APPLICATION_CREDENTIALS = credentials('107137149517916272005') // Service account credential
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp-service-account')  // Service account credential
     }
 
-    stage('Prepare Environment') {
-    steps {
-        script {
-            // Install required system packages
-            sh '''
-            set -e
-            sudo apt-get update
-            sudo apt-get install -y python3.11 python3.11-venv
-            '''
-        }
-    }
-}
-
-
+    stages {
         stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/GollaGiddaiah/appengine-2025.git'
             }
         }
 
-        stage('Set Up Virtual Environment') {
-    steps {
-        script {
-            sh '''
-            set -e
-            python3.11 -m venv venv
-            source venv/bin/activate
-            pip install --upgrade pip
-            '''
-        }
-    }
-}
-
-
         stage('Install Dependencies') {
             steps {
                 script {
-                    // Install dependencies
+                    // Create and activate a virtual environment, then install dependencies
                     sh '''
-                    set -e
-                    source venv/bin/activate
+                    # Update apt package list
+                    sudo apt-get update -y
+                    
+                    # Install Python3 and development tools if not installed
+                    sudo apt-get install -y python3-pip python3-dev python3-venv bash
+                    
+                    # Create a virtual environment
+                    python3 -m venv venv
+                    
+                    # Activate the virtual environment using bash
+                    . venv/bin/activate  # Using dot (.) instead of 'source'
+                    
+                    # Upgrade pip inside the virtual environment
+                    pip install --upgrade pip
+                    
+                    # Install dependencies from requirements.txt
                     pip install -r requirements.txt
-                    '''
-                }
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                script {
-                    // Run tests
-                    sh '''
-                    set -e
-                    source venv/bin/activate
-                    pytest
                     '''
                 }
             }
@@ -69,13 +43,19 @@ pipeline {
         stage('Deploy to Google App Engine') {
             steps {
                 script {
-                    // Authenticate with Google Cloud and deploy
-                    sh '''
-                    set -e
-                    gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
-                    gcloud config set project $PROJECT_ID
-                    gcloud app deploy --quiet
-                    '''
+                    // Ensure gcloud is installed and show working directory
+                    sh 'gcloud --version'
+                    sh 'pwd'  // Print the working directory
+                    sh 'ls -l'  // List contents to ensure app.yaml is present
+
+                    // Authenticate with Google Cloud using service account
+                    sh 'gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}'
+
+                    // Set the project ID for Google Cloud
+                    sh 'gcloud config set project $PROJECT_ID'
+
+                    // Deploy the application to App Engine
+                    sh 'gcloud app deploy app.yaml --quiet'  // Quiet flag prevents interactive prompts
                 }
             }
         }
@@ -83,8 +63,8 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up virtual environment...'
-            sh 'rm -rf venv || true'
+            echo 'Cleaning up...'
+            cleanWs()  // Optional: Clean workspace after the pipeline
         }
 
         success {
