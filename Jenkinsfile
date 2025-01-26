@@ -7,19 +7,29 @@ pipeline {
     }
 
     stages {
+        stage('Prepare Environment') {
+            steps {
+                script {
+                    // Install required system packages
+                    sh '''
+                    sudo apt-get update
+                    sudo apt-get install -y python3.11-venv
+                    '''
+                }
+            }
+        }
+
         stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/GollaGiddaiah/appengine-2025.git'
             }
         }
 
-        stage('Set Up Environment') {
+        stage('Set Up Virtual Environment') {
             steps {
                 script {
-                    // Install Poetry and set up a virtual environment
+                    // Create and activate a virtual environment
                     sh '''
-                    curl -sS https://install.python-poetry.org | python3 -
-                    export PATH="$HOME/.local/bin:$PATH"
                     python3 -m venv venv
                     source venv/bin/activate
                     pip install --upgrade pip
@@ -31,10 +41,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    // Install dependencies using Poetry
+                    // Install dependencies
                     sh '''
                     source venv/bin/activate
-                    poetry install
+                    pip install -r requirements.txt
                     '''
                 }
             }
@@ -43,7 +53,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Run your tests using the virtual environment
+                    // Run tests
                     sh '''
                     source venv/bin/activate
                     pytest
