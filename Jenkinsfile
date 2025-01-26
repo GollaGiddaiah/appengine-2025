@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         PROJECT_ID = 'bunny-project-444905'
-        GOOGLE_APPLICATION_CREDENTIALS = credentials('test-gcp-appengine') // Service account credential
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('107137149517916272005') // Service account credential
     }
 
     stages {
@@ -12,8 +12,9 @@ pipeline {
                 script {
                     // Install required system packages
                     sh '''
+                    set -e
                     sudo apt-get update
-                    sudo apt-get install -y python3.11-venv
+                    sudo apt-get install -y python3.11 python3.11-venv
                     '''
                 }
             }
@@ -30,6 +31,7 @@ pipeline {
                 script {
                     // Create and activate a virtual environment
                     sh '''
+                    set -e
                     python3 -m venv venv
                     source venv/bin/activate
                     pip install --upgrade pip
@@ -43,6 +45,7 @@ pipeline {
                 script {
                     // Install dependencies
                     sh '''
+                    set -e
                     source venv/bin/activate
                     pip install -r requirements.txt
                     '''
@@ -55,6 +58,7 @@ pipeline {
                 script {
                     // Run tests
                     sh '''
+                    set -e
                     source venv/bin/activate
                     pytest
                     '''
@@ -65,14 +69,11 @@ pipeline {
         stage('Deploy to Google App Engine') {
             steps {
                 script {
-                    // Authenticate with Google Cloud
+                    // Authenticate with Google Cloud and deploy
                     sh '''
+                    set -e
                     gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                     gcloud config set project $PROJECT_ID
-                    '''
-
-                    // Deploy to App Engine
-                    sh '''
                     gcloud app deploy --quiet
                     '''
                 }
@@ -82,7 +83,8 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up...'
+            echo 'Cleaning up virtual environment...'
+            sh 'rm -rf venv || true'
         }
 
         success {
