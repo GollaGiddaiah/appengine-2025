@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        PROJECT_ID = 'my-first-devops-project-444911'
-        GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp-service-account')  // Service account credential
+        PROJECT_ID = 'bunny-project-444905'
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('test-gcp-appengine')  // Service account credential
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/saleemafroze/appengine-poc.git'
+                git branch: 'main', url: 'https://github.com/GollaGiddaiah/appengine-2025.git'
             }
         }
 
