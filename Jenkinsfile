@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         PROJECT_ID = 'bunny-project-444905'
-        GOOGLE_APPLICATION_CREDENTIALS = credentials('test-gcp-appengine')  // Service account credential
+        GOOGLE_APPLICATION_CREDENTIALS = credentials('test-gcp-appengine') // Service account credential
     }
 
     stages {
@@ -13,15 +13,28 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Set Up Environment') {
             steps {
                 script {
-                    // Install Python and pip locally (without sudo)
+                    // Install Poetry and set up a virtual environment
                     sh '''
                     curl -sS https://install.python-poetry.org | python3 -
                     export PATH="$HOME/.local/bin:$PATH"
+                    python3 -m venv venv
+                    source venv/bin/activate
                     pip install --upgrade pip
-                    pip install -r requirements.txt
+                    '''
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    // Install dependencies using Poetry
+                    sh '''
+                    source venv/bin/activate
+                    poetry install
                     '''
                 }
             }
@@ -30,8 +43,11 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    // Run your tests here (if any)
-                    sh 'pytest'
+                    // Run your tests using the virtual environment
+                    sh '''
+                    source venv/bin/activate
+                    pytest
+                    '''
                 }
             }
         }
@@ -40,13 +56,15 @@ pipeline {
             steps {
                 script {
                     // Authenticate with Google Cloud
-                    sh 'gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}'
-
-                    // Set project ID
-                    sh 'gcloud config set project $PROJECT_ID'
+                    sh '''
+                    gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
+                    gcloud config set project $PROJECT_ID
+                    '''
 
                     // Deploy to App Engine
-                    sh 'gcloud app browse'
+                    sh '''
+                    gcloud app deploy --quiet
+                    '''
                 }
             }
         }
@@ -55,7 +73,6 @@ pipeline {
     post {
         always {
             echo 'Cleaning up...'
-            // Optional: Clean up after the pipeline
         }
 
         success {
