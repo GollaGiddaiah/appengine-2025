@@ -6,19 +6,19 @@ pipeline {
         GOOGLE_APPLICATION_CREDENTIALS = credentials('107137149517916272005') // Service account credential
     }
 
-    stages {
-        stage('Prepare Environment') {
-            steps {
-                script {
-                    // Install required system packages
-                    sh '''
-                    set -e
-                    sudo apt-get update
-                    sudo apt-get install -y python3.11 python3.11-venv
-                    '''
-                }
-            }
+    stage('Prepare Environment') {
+    steps {
+        script {
+            // Install required system packages
+            sh '''
+            set -e
+            sudo apt-get update
+            sudo apt-get install -y python3.11 python3.11-venv
+            '''
         }
+    }
+}
+
 
         stage('Clone Repository') {
             steps {
